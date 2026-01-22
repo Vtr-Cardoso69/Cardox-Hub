@@ -1,0 +1,193 @@
+--[[
+    SCRIPT DE TESTE - CRIADO POR TRAE AI
+    Compatível com: Delta, Fluxus, Hydrogen, Arceus X, etc.
+    
+    Este script usa a biblioteca 'Rayfield Interface Suite' para criar um menu bonito e organizado.
+    O código está aberto e comentado para estudo.
+]]
+
+-- Carrega a Biblioteca de UI (Rayfield)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Cria a Janela Principal
+local Window = Rayfield:CreateWindow({
+    Name = "Teste Hub - Delta Executor",
+    LoadingTitle = "Carregando...",
+    LoadingSubtitle = "Por Trae AI",
+    ConfigurationSaving = {
+        Enabled = false,
+        FolderName = nil, 
+        FileName = "BigHub"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "", 
+        RememberJoins = true 
+    },
+    KeySystem = false, -- Sem sistema de chave para facilitar
+})
+
+-- =================================================================
+-- ABA: PLAYER (Funcionalidades do Jogador)
+-- =================================================================
+local PlayerTab = Window:CreateTab("Player", 4483362458) -- Ícone genérico
+
+-- Slider de Velocidade (WalkSpeed)
+PlayerTab:CreateSlider({
+    Name = "Velocidade (WalkSpeed)",
+    Range = {16, 300}, -- Mínimo 16, Máximo 300
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = 16,
+    Flag = "SliderWalkSpeed", 
+    Callback = function(Value)
+        -- Tenta alterar a velocidade se o personagem existir
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+        end
+    end,
+})
+
+-- Slider de Pulo (JumpPower)
+PlayerTab:CreateSlider({
+    Name = "Força do Pulo (JumpPower)",
+    Range = {50, 500},
+    Increment = 1,
+    Suffix = "Power",
+    CurrentValue = 50,
+    Flag = "SliderJumpPower", 
+    Callback = function(Value)
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.UseJumpPower = true
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+        end
+    end,
+})
+
+-- Toggle de Voar (Fly Script Simples)
+local FlightEnabled = false
+local FlightSpeed = 50
+local BodyVelocity = nil
+local BodyGyro = nil
+
+PlayerTab:CreateToggle({
+    Name = "Voar (Fly)",
+    CurrentValue = false,
+    Flag = "ToggleFly", 
+    Callback = function(Value)
+        FlightEnabled = Value
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        
+        if FlightEnabled and root then
+            -- Ativa o Voo
+            BodyVelocity = Instance.new("BodyVelocity")
+            BodyVelocity.Velocity = Vector3.new(0,0,0)
+            BodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            BodyVelocity.Parent = root
+            
+            BodyGyro = Instance.new("BodyGyro")
+            BodyGyro.P = 9e4
+            BodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+            BodyGyro.cframe = root.CFrame
+            BodyGyro.Parent = root
+            
+            -- Loop de Voo
+            task.spawn(function()
+                while FlightEnabled and character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 do
+                    local camera = workspace.CurrentCamera
+                    local moveDir = require(player.PlayerScripts:WaitForChild("PlayerModule")):GetControls():GetMoveVector()
+                    
+                    BodyGyro.cframe = camera.CFrame
+                    BodyVelocity.Velocity = (camera.CFrame.LookVector * moveDir.Z * -FlightSpeed) + (camera.CFrame.RightVector * moveDir.X * FlightSpeed)
+                    
+                    -- Subir e Descer com Espaço e Ctrl (Simulação simples)
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+                        BodyVelocity.Velocity = BodyVelocity.Velocity + Vector3.new(0, FlightSpeed, 0)
+                    elseif game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
+                        BodyVelocity.Velocity = BodyVelocity.Velocity - Vector3.new(0, FlightSpeed, 0)
+                    end
+                    
+                    task.wait()
+                end
+            end)
+        else
+            -- Desativa o Voo
+            if BodyVelocity then BodyVelocity:Destroy() end
+            if BodyGyro then BodyGyro:Destroy() end
+        end
+    end,
+})
+
+-- =================================================================
+-- ABA: VISUALS (ESP e Wallhack)
+-- =================================================================
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+local ESPEnabled = false
+
+-- Função para Adicionar ESP em um Personagem
+local function AddESP(character)
+    if not ESPEnabled then return end
+    if character:FindFirstChild("HighlightESP") then return end -- Já tem ESP
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "HighlightESP"
+    highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Vermelho
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Branco
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Adornee = character
+    highlight.Parent = character
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Vê através das paredes
+end
+
+-- Função para Remover ESP
+local function RemoveESP()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("HighlightESP") then
+            player.Character.HighlightESP:Destroy()
+        end
+    end
+end
+
+VisualsTab:CreateToggle({
+    Name = "ESP (Ver Jogadores)",
+    CurrentValue = false,
+    Flag = "ToggleESP", 
+    Callback = function(Value)
+        ESPEnabled = Value
+        
+        if ESPEnabled then
+            -- Adiciona em quem já está no jogo
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer and player.Character then
+                    AddESP(player.Character)
+                end
+            end
+            
+            -- Conecta evento para novos personagens
+            game.Players.PlayerAdded:Connect(function(player)
+                player.CharacterAdded:Connect(function(character)
+                    if ESPEnabled then
+                        task.wait(1) -- Espera carregar
+                        AddESP(character)
+                    end
+                end)
+            end)
+        else
+            RemoveESP()
+        end
+    end,
+})
+
+-- =================================================================
+-- NOTIFICAÇÃO FINAL
+-- =================================================================
+Rayfield:Notify({
+    Title = "Script Carregado!",
+    Content = "Script de teste carregado com sucesso.",
+    Duration = 6.5,
+    Image = 4483362458,
+})
