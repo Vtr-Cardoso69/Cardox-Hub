@@ -48,6 +48,28 @@ PlayerTab:CreateSlider({
     end,
 })
 
+--   PULAR   --
+
+local player = game.Players.LocalPlayer
+local lastJumpValue = 50
+
+local function aplicarJump()
+    local char = player.Character
+    if not char then return end
+
+    local hum = char:FindFirstChild("Humanoid")
+    if hum then
+        hum.UseJumpPower = true
+        hum.JumpPower = lastJumpValue
+    end
+end
+
+player.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
+    aplicarJump()
+end)
+
+
 -- Slider de Pulo (JumpPower)
 PlayerTab:CreateSlider({
     Name = "Força do Pulo (JumpPower)",
@@ -57,12 +79,11 @@ PlayerTab:CreateSlider({
     CurrentValue = 50,
     Flag = "SliderJumpPower", 
     Callback = function(Value)
-        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid.UseJumpPower = true
-            game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
-        end
+        lastJumpValue = Value
+        aplicarJump()
     end,
 })
+
 
 -- Toggle de Voar (Fly Script Simples)
 local FlightEnabled = false
