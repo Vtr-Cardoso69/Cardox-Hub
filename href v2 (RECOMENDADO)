@@ -385,7 +385,7 @@ local RunService = game:GetService("RunService")
 TrollTab:CreateButton({
     Name = "Atualizar Players",
     Callback = function()
-        local ScriptURL = "https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/main/href"
+        local ScriptURL = "https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/main/href v2 (RECOMENDADO)"
 
         local success, err = pcall(function()
             loadstring(game:HttpGet(ScriptURL))()
