@@ -1,6 +1,5 @@
 --[[
-    LINK   loadstring(game:HttpGet("https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/refs/heads/main/href%20v2%20(RECOMENDADO)"))()
-
+    LINK    loadstring(game:HttpGet("https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/refs/heads/main/href%20v2%20(RECOMENDADO)"))()
 
     SCRIPT DE TESTE - CARDOX HUB
     Compatível com: Delta, Fluxus, Hydrogen, Arceus X, etc.
