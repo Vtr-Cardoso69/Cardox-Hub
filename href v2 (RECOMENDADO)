@@ -1,0 +1,653 @@
+--[[
+    SCRIPT DE TESTE - CARDOX HUB
+    Compatível com: Delta, Fluxus, Hydrogen, Arceus X, etc.
+    
+    Este script usa a biblioteca 'Rayfield Interface Suite' para criar um menu bonito e organizado.
+    O código está aberto e comentado para estudo.
+]]
+
+-- Carrega a Biblioteca de UI (Rayfield)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Cria a Janela Principal
+local Window = Rayfield:CreateWindow({
+    Name = "Cardox Hub - Delta Executor",
+    LoadingTitle = "Carregando...",
+    LoadingSubtitle = "Por Trae AI x Cardox x GPT",
+    ConfigurationSaving = {
+        Enabled = false,
+        FolderName = nil, 
+        FileName = "BigHub"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "", 
+        RememberJoins = true 
+    },
+    KeySystem = false, -- Sem sistema de chave para facilitar
+})
+
+-- =================================================================
+--                      ABA: PLAYER 
+-- =================================================================
+
+local PlayerTab = Window:CreateTab("Player", 4483362458) -- Ícone genérico
+
+-- =========
+-- GIRO 360
+-- =========
+
+local SpinEnabled = false
+local SpinConnection = nil
+
+PlayerTab:CreateToggle({
+    Name = "Giro Rápido (360°)",
+    CurrentValue = false,
+    Flag = "ToggleSpinNormal",
+    Callback = function(Value)
+        SpinEnabled = Value
+
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+
+        if not root then return end
+
+        if SpinEnabled then
+            SpinConnection = game:GetService("RunService").RenderStepped:Connect(function(dt)
+                local speed = math.rad(1440) -- duas voltas por segundo
+                root.CFrame = root.CFrame * CFrame.Angles(0, speed * dt, 0)
+            end)
+        else
+            if SpinConnection then
+                SpinConnection:Disconnect()
+                SpinConnection = nil
+            end
+        end
+    end,
+})
+
+-- ===========
+-- VELOCIDADE
+-- ===========
+
+PlayerTab:CreateSlider({
+    Name = "Velocidade (WalkSpeed)",
+    Range = {16, 600}, -- Mínimo 16, Máximo 300
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = 16,
+    Flag = "SliderWalkSpeed", 
+   Callback = function(Value)
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    local hum = char and char:FindFirstChild("Humanoid")
+
+    if hum then
+        hum.WalkSpeed = Value
+    end
+
+    FlightSpeed = Value -- 👈 voo = corrida
+end
+
+})
+
+-- ===========
+-- POWER JUMP 
+-- ===========
+
+local player = game.Players.LocalPlayer
+
+PlayerTab:CreateSlider({
+    Name = "Força do Pulo (JumpPower)",
+    Range = {50, 500},
+    Increment = 1,
+    Suffix = "Power",
+    CurrentValue = 50,
+    Flag = "SliderJumpPower",
+    Callback = function(Value)
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                hum.UseJumpPower = true
+                hum.JumpPower = Value
+            end
+        end
+    end,
+})
+
+-- ==========================
+-- RESETAR VELOCIDADE E PULO
+-- ==========================
+
+PlayerTab:CreateButton({
+    Name = "Resetar velocidade e pulo",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+
+        if hum then
+            hum.WalkSpeed = 16
+            hum.UseJumpPower = true
+            hum.JumpPower = 50
+        end
+
+    end
+})
+
+-- ===============
+-- VOAR (FLY)
+-- ===============
+
+local FlightEnabled = false
+
+local BodyVelocity = nil
+local BodyGyro = nil
+FlightSpeed = 50
+PlayerTab:CreateToggle({
+    Name = "Voar (Fly)",
+    CurrentValue = false,
+    Flag = "ToggleFly", 
+    Callback = function(Value)
+        FlightEnabled = Value
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        
+        if FlightEnabled and root then
+          
+            -- ATIVAÇÃO
+
+           local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
+                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+            end
+            
+            BodyVelocity = Instance.new("BodyVelocity")
+            BodyVelocity.Velocity = Vector3.new(0,0,0)
+            BodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            BodyVelocity.Parent = root
+            
+            BodyGyro = Instance.new("BodyGyro")
+            BodyGyro.P = 9e4
+            BodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+            BodyGyro.cframe = root.CFrame
+            BodyGyro.Parent = root
+            
+            task.spawn(function()
+    while FlightEnabled and humanoid and humanoid.Health > 0 do
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        task.wait(0.2)
+    end
+end)
+
+            -- LOOP
+
+            task.spawn(function()
+                while FlightEnabled and character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 do
+                    local camera = workspace.CurrentCamera
+                    local moveDir = require(player.PlayerScripts:WaitForChild("PlayerModule")):GetControls():GetMoveVector()
+                    
+                    BodyGyro.cframe = camera.CFrame
+                    BodyVelocity.Velocity = (camera.CFrame.LookVector * moveDir.Z * -FlightSpeed) + (camera.CFrame.RightVector * moveDir.X * FlightSpeed)
+                    
+                    -- Subir e Descer com Espaço e Ctrl (Simulação simples)
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+                        BodyVelocity.Velocity = BodyVelocity.Velocity + Vector3.new(0, FlightSpeed, 0)
+                    elseif game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
+                        BodyVelocity.Velocity = BodyVelocity.Velocity - Vector3.new(0, FlightSpeed, 0)
+                    end
+                    
+                    task.wait()
+                end
+            end)
+        else
+
+            -- DESATIVAÇÃO
+
+            if BodyVelocity then BodyVelocity:Destroy() end
+            if BodyGyro then BodyGyro:Destroy() end
+        
+        local humanoid = character and character:FindFirstChild("Humanoid")
+    
+      if humanoid then
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+    humanoid:ChangeState(Enum.HumanoidStateType.Running)
+
+        end
+    end
+end,
+
+})
+
+-- =================================================================
+--                          ABA: VISUALS
+-- =================================================================
+
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+local ESPEnabled = false
+
+-- ====================
+-- ESP (VER JOGADORES)
+-- ====================
+
+local function AddESP(character)
+    if not ESPEnabled then return end
+    if character:FindFirstChild("HighlightESP") then return end -- Já tem ESP
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "HighlightESP"
+    highlight.FillColor = Color3.fromRGB(255, 255, 255) -- Branco
+    highlight.OutlineColor = Color3.fromRGB(1, 137, 249) -- Azul
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0.1
+    highlight.Adornee = character
+    highlight.Parent = character
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Vê através das paredes
+end
+
+-- Função para Remover ESP
+local function RemoveESP()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("HighlightESP") then
+            player.Character.HighlightESP:Destroy()
+        end
+    end
+end
+
+VisualsTab:CreateToggle({
+    Name = "ESP (Ver Jogadores)",
+    CurrentValue = false,
+    Flag = "ToggleESP", 
+    Callback = function(Value)
+        ESPEnabled = Value
+        
+        if ESPEnabled then
+            -- Adiciona em quem já está no jogo
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer and player.Character then
+                    AddESP(player.Character)
+                end
+            end
+            
+            -- Conecta evento para novos personagens
+            
+            game.Players.PlayerAdded:Connect(function(player)
+                player.CharacterAdded:Connect(function(character)
+                    if ESPEnabled then
+                        task.wait(1) -- Espera carregar
+                        AddESP(character)
+                    end
+                end)
+            end)
+        else
+            RemoveESP()
+        end
+    end,
+})
+
+-- ================
+-- ESP (VER NOMES)
+-- ================
+
+local NameESPEnabled = false
+
+local function AddNameESP(character, playerName)
+    if character:FindFirstChild("NameESP") then return end
+
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "NameESP"
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 1.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = character
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = playerName
+    text.TextColor3 = Color3.fromRGB(1, 137, 249)
+    text.TextStrokeTransparency = 0.3
+
+    -- 🔒 tamanho fixo:
+    text.TextScaled = false
+    text.TextSize = 18  -- ajuste aqui (16–22 é um bom intervalo)
+
+    text.Font = Enum.Font.SourceSansBold
+    text.Parent = billboard
+end
+
+
+local function RemoveNameESP()
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr.Character and plr.Character:FindFirstChild("NameESP") then
+            plr.Character.NameESP:Destroy()
+        end
+    end
+end
+
+VisualsTab:CreateToggle({
+    Name = "ESP Nome dos jogadores",
+    CurrentValue = false,
+    Flag = "ToggleNameESP",
+    Callback = function(v)
+        NameESPEnabled = v
+
+        if v then
+            -- jogadores atuais
+            for _, plr in pairs(game.Players:GetPlayers()) do
+                if plr ~= game.Players.LocalPlayer and plr.Character then
+                    AddNameESP(plr.Character, plr.Name)
+                end
+            end
+
+            -- novos jogadores
+            game.Players.PlayerAdded:Connect(function(plr)
+                plr.CharacterAdded:Connect(function(char)
+                    if NameESPEnabled then
+                        task.wait(1)
+                        AddNameESP(char, plr.Name)
+                    end
+                end)
+            end)
+        else
+            RemoveNameESP()
+        end
+    end,
+})
+
+
+
+
+-- =================================================================
+--                          ABA: TROLL 
+-- =================================================================
+
+local TrollTab = Window:CreateTab("Troll", 4483362458)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+-- =========================
+-- CARREGA SCRIPT (ATUALIZAR PLAYERS)
+-- =========================
+
+TrollTab:CreateButton({
+    Name = "Atualizar Players",
+    Callback = function()
+        local ScriptURL = "https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/main/href"
+
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(ScriptURL))()
+        end)
+    end
+})
+
+-- ===================
+-- LISTA DE JOGADORES
+-- ===================
+
+local function GetPlayerNames()
+    local names = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= Players.LocalPlayer then
+            table.insert(names, plr.Name)
+        end
+    end
+    return names
+end
+
+local SelectedPlayer = nil
+local SpectateEnabled = false
+local ESPEnabled = false
+local FollowEnabled = false
+local ESPHighlight = nil
+
+local function GetSelectedPlayerObject()
+    if not SelectedPlayer then return nil end
+    return Players:FindFirstChild(SelectedPlayer)
+end
+
+-- =========
+-- DROPDOWN
+-- =========
+
+TrollTab:CreateDropdown({
+    Name = "Selecionar jogador",
+    Options = GetPlayerNames(),
+    CurrentOption = {},
+    Flag = "SelectPlayer",
+    Callback = function(option)
+        SelectedPlayer = option[1]
+        print("Selecionado:", SelectedPlayer)
+
+        if SpectateEnabled then UpdateSpectate() end
+        if ESPEnabled then UpdateESP() end
+    end,
+})
+
+-- =========
+-- SPECTATE
+-- =========
+
+function UpdateSpectate()
+    local cam = workspace.CurrentCamera
+
+    if SpectateEnabled then
+        local plr = GetSelectedPlayerObject()
+        if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+            cam.CameraSubject = plr.Character.Humanoid
+        end
+    else
+        local myChar = Players.LocalPlayer.Character
+        if myChar and myChar:FindFirstChild("Humanoid") then
+            cam.CameraSubject = myChar.Humanoid
+        end
+    end
+end
+
+TrollTab:CreateToggle({
+    Name = "Spectar jogador",
+    CurrentValue = false,
+    Flag = "ToggleSpectatePlayer",
+    Callback = function(v)
+        SpectateEnabled = v
+        UpdateSpectate()
+    end,
+})
+
+-- =========
+-- TELEPORT
+-- =========
+
+local function TeleportToPlayer()
+    local plr = GetSelectedPlayerObject()
+    local myChar = Players.LocalPlayer.Character
+    if not plr or not plr.Character or not myChar then return end
+
+    local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+
+    if tRoot and myRoot then
+        myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, 3)
+    end
+end
+
+TrollTab:CreateButton({
+    Name = "Teleportar até jogador",
+    Callback = TeleportToPlayer
+})
+
+-- ===============
+-- SEGUIR JOGADOR
+-- ===============
+
+RunService.RenderStepped:Connect(function()
+    if FollowEnabled then
+        local plr = GetSelectedPlayerObject()
+        local myChar = Players.LocalPlayer.Character
+
+        if plr and plr.Character and myChar then
+            local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+            local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+
+            if tRoot and myRoot then
+                myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Seguir jogador",
+    CurrentValue = false,
+    Callback = function(v)
+        FollowEnabled = v
+    end,
+})
+
+-- ==========
+-- ESP VISÃO
+-- ==========
+
+function UpdateESP()
+    if ESPHighlight then
+        ESPHighlight:Destroy()
+        ESPHighlight = nil
+    end
+
+    if ESPEnabled then
+        local plr = GetSelectedPlayerObject()
+        if plr and plr.Character then
+            local h = Instance.new("Highlight")
+            h.FillColor = Color3.fromRGB(255, 0, 0)
+            h.OutlineColor = Color3.fromRGB(255, 255, 255)
+            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            h.Adornee = plr.Character
+            h.Parent = plr.Character
+            ESPHighlight = h
+        end
+    end
+end
+
+TrollTab:CreateToggle({
+    Name = "ESP no jogador",
+    CurrentValue = false,
+    Callback = function(v)
+        ESPEnabled = v
+        UpdateESP()
+    end,
+})
+
+-- ===============
+-- COPIAR POSIÇÃO
+-- ===============
+
+local SavedPosition = nil
+
+TrollTab:CreateButton({
+    Name = "Copiar posição do jogador",
+    Callback = function()
+        local plr = GetSelectedPlayerObject()
+        if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            SavedPosition = plr.Character.HumanoidRootPart.CFrame
+            print("Posição copiada")
+        end
+    end,
+})
+
+TrollTab:CreateButton({
+    Name = "Ir para posição copiada",
+    Callback = function()
+        if SavedPosition then
+            local myChar = Players.LocalPlayer.Character
+            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+                myChar.HumanoidRootPart.CFrame = SavedPosition
+            end
+        end
+    end,
+})
+
+-- ====================
+-- PERCORRER JOGADORES
+-- ====================
+
+local TourDuration = 2
+
+local FollowAllActive = false
+local FollowTaskRunning = false
+local FollowStartCFrame = nil
+
+local function FollowTargetForSeconds(tRoot, seconds)
+    local myChar = Players.LocalPlayer.Character
+    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myRoot or not tRoot then return end
+    local start = os.clock()
+    while os.clock() - start < seconds do
+        if not FollowAllActive or not myRoot.Parent or not tRoot.Parent then break end
+        myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, 2)
+        game:GetService("RunService").RenderStepped:Wait()
+    end
+end
+
+local function FollowThroughAllPlayersOnce()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= Players.LocalPlayer and plr.Character then
+            local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+            if tRoot then
+                FollowTargetForSeconds(tRoot, TourDuration)
+            end
+        end
+    end
+end
+
+TrollTab:CreateToggle({
+    Name = "Seguir todos",
+    CurrentValue = false,
+    Flag = "ToggleFollowAll",
+    Callback = function(v)
+        FollowAllActive = v
+        local myChar = Players.LocalPlayer.Character
+        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if v then
+            FollowStartCFrame = myRoot and myRoot.CFrame or nil
+            if not FollowTaskRunning then
+                FollowTaskRunning = true
+                task.spawn(function()
+                    FollowThroughAllPlayersOnce()
+                    FollowTaskRunning = false
+                    local finalChar = Players.LocalPlayer.Character
+                    local finalRoot = finalChar and finalChar:FindFirstChild("HumanoidRootPart")
+                    if FollowStartCFrame and finalRoot then
+                        finalRoot.CFrame = FollowStartCFrame
+                    end
+                end)
+            end
+        else
+            -- Desliga: o retorno à posição inicial será feito ao encerrar a thread
+        end
+    end,
+})
+
+
+
+-- ==================
+-- NOTIFICAÇÃO FINAL
+-- ==================
+
+Rayfield:Notify({
+    Title = "Script Carregado!",
+    Content = "Cardox-testes carregado com sucesso.",
+    Duration = 3.5,
+    Image = 4483362458,
+    })

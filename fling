@@ -1,0 +1,20 @@
+-- Fling
+TrollTab:CreateButton({
+    Name = "Fling",
+    Callback = function()
+        local p = GetTarget()
+        if p and p.Character and LocalPlayer.Character then
+            local root = LocalPlayer.Character.HumanoidRootPart
+            root.CFrame = p.Character.HumanoidRootPart.CFrame
+
+            local bv = Instance.new("BodyVelocity")
+            bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+            bv.Velocity = Vector3.new(0,200,0)
+            bv.Parent = root
+
+            task.delay(0.2, function()
+                bv:Destroy()
+            end)
+        end
+    end
+})
