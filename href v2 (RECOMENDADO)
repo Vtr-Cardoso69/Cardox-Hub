@@ -228,6 +228,74 @@ end,
 
 })
 
+-- ============================
+-- NOCLIP (ATRAVESSAR PAREDES)
+-- ============================
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local NoclipEnabled = false
+local noclipConnection = nil
+
+local function SetNoclip(character, state)
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CanCollide = not state
+		end
+	end
+end
+
+local function StartNoclip()
+	if noclipConnection then
+		noclipConnection:Disconnect()
+	end
+
+	noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+		if not NoclipEnabled then return end
+
+		local character = player.Character
+		if character then
+			SetNoclip(character, true)
+		end
+	end)
+end
+
+local function StopNoclip()
+	if noclipConnection then
+		noclipConnection:Disconnect()
+		noclipConnection = nil
+	end
+
+	local character = player.Character
+	if character then
+		SetNoclip(character, false)
+	end
+end
+
+-- Caso o player morra com noclip ativo
+player.CharacterAdded:Connect(function(char)
+	if NoclipEnabled then
+		task.wait(0.5)
+		SetNoclip(char, true)
+	end
+end)
+
+PlayerTab:CreateToggle({
+	Name = "Noclip (Atravessar paredes)",
+	CurrentValue = false,
+	Flag = "ToggleNoclip",
+	Callback = function(Value)
+		NoclipEnabled = Value
+
+		if Value then
+			StartNoclip()
+		else
+			StopNoclip()
+		end
+	end,
+})
+
 -- =================================================================
 --                          ABA: VISUALS
 -- =================================================================
