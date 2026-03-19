@@ -1,0 +1,34 @@
+-- require ou pegar módulos
+local Anim = require(script.Anim["anim.lua"])
+local Player = require(script.Player["player.lua"])
+local Troll = require(script.Troll["troll.lua"])
+local Visuals = require(script.Visuals["visual.lua"])
+
+-- Inicializa Rayfield (uma única vez)
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()  
+
+-- Cria a janela principal
+local Window = Rayfield:CreateWindow({
+    Name = "Meu Script",
+    LoadingTitle = "Carregando...",
+    LoadingSubtitle = "Aguarde",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "MeuScript", 
+        FileName = "Config"
+    },
+    Discord = {
+        Enabled = false,
+    }
+})
+
+-- Cria abas (tabs) — exemplo
+local AnimTab = Window:CreateTab("Anim", 4483362458)
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+-- Chama os módulos passando as tabs e Rayfield se precisarem
+if Anim.Init then Anim.Init(AnimTab) end
+if Player.Init then Player.Init(PlayerTab, Rayfield) end
+if Troll.Init then Troll.Init() end
+if Visuals.Init then Visuals.Init(VisualsTab) end

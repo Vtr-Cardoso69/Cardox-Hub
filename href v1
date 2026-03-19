@@ -373,7 +373,7 @@ TrollTab:CreateDropdown({
     CurrentOption = {},
     Flag = "SelectPlayer",
     Callback = function(option)
-        SelectedPlayer = option[1]
+        SelectedPlayer = type(option) == "table" and option[1] or option
         print("Selecionado:", SelectedPlayer)
 
         if SpectateEnabled then UpdateSpectate() end
