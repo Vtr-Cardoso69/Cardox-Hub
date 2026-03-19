@@ -1,34 +1,48 @@
--- require ou pegar módulos
-local Anim = require(script.Anim["anim.lua"])
-local Player = require(script.Player["player.lua"])
-local Troll = require(script.Troll["troll.lua"])
-local Visuals = require(script.Visuals["visual.lua"])
-
 -- Inicializa Rayfield (uma única vez)
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()  
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()  
 
 -- Cria a janela principal
 local Window = Rayfield:CreateWindow({
-    Name = "Meu Script",
+    Name = "Cardox Hub - v3",
     LoadingTitle = "Carregando...",
-    LoadingSubtitle = "Aguarde",
+    LoadingSubtitle = "Por Trae AI x Cardox x GPT",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "MeuScript", 
+        FolderName = "CardoxHubV3", 
         FileName = "Config"
     },
     Discord = {
         Enabled = false,
-    }
+    },
+    KeySystem = false
 })
 
--- Cria abas (tabs) — exemplo
-local AnimTab = Window:CreateTab("Anim", 4483362458)
+-- Cria abas (tabs)
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+local TrollTab = Window:CreateTab("Troll", 4483362458)
+local AnimTab = Window:CreateTab("Animações", 4483362458)
 
--- Chama os módulos passando as tabs e Rayfield se precisarem
+-- Carrega os módulos (pastas/arquivos)
+-- Nota: Em executores Roblox, o acesso a pastas pode variar. 
+-- Usamos script.Parent se href v3 estiver na mesma pasta que as outras.
+local MainFolder = script.Parent
+
+local Anim = require(MainFolder:WaitForChild("Anim"):WaitForChild("anim.lua"))
+local Player = require(MainFolder:WaitForChild("Player"):WaitForChild("player.lua"))
+local Troll = require(MainFolder:WaitForChild("Troll"):WaitForChild("troll.lua"))
+local Visuals = require(MainFolder:WaitForChild("Visuals"):WaitForChild("visual.lua"))
+
+-- Inicializa cada aba com suas funções
+if Player.Init then Player.Init(PlayerTab) end
+if Visuals.Init then Visuals.Init(VisualsTab, Rayfield) end
+if Troll.Init then Troll.Init(TrollTab) end
 if Anim.Init then Anim.Init(AnimTab) end
-if Player.Init then Player.Init(PlayerTab, Rayfield) end
-if Troll.Init then Troll.Init() end
-if Visuals.Init then Visuals.Init(VisualsTab) end
+
+-- Notificação de sucesso
+Rayfield:Notify({
+    Title = "Hub Carregado!",
+    Content = "Cardox Hub v3 inicializado com sucesso.",
+    Duration = 5,
+    Image = 4483362458,
+})
