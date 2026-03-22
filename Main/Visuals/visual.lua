@@ -60,29 +60,34 @@ function VisualsModule.Init(VisualsTab, Rayfield)
     })
 
     -- ================
-    -- ESP (VER NOMES)
+    -- ESP (NOMES E IDADE)
     -- ================
 
-    local function AddNameESP(character, playerName)
+    local cache = {}
+
+    local function AddNameESP(character, plr)
         if character:FindFirstChild("NameESP") then return end
         local head = character:FindFirstChild("Head")
         if not head then return end
 
+        local days = plr.AccountAge or 0
+        local displayText = plr.Name .. "\n[" .. days .. " dias]"
+
         local billboard = Instance.new("BillboardGui")
         billboard.Name = "NameESP"
-        billboard.Size = UDim2.new(0, 200, 0, 50)
-        billboard.StudsOffset = Vector3.new(0, 1.5, 0)
+        billboard.Size = UDim2.new(0, 200, 0, 70)
+        billboard.StudsOffset = Vector3.new(0, 2, 0)
         billboard.AlwaysOnTop = true
         billboard.Parent = character
 
         local text = Instance.new("TextLabel")
         text.Size = UDim2.new(1, 0, 1, 0)
         text.BackgroundTransparency = 1
-        text.Text = playerName
+        text.Text = displayText
         text.TextColor3 = Color3.fromRGB(1, 137, 249)
         text.TextStrokeTransparency = 0.3
         text.TextScaled = false
-        text.TextSize = 18
+        text.TextSize = 16
         text.Font = Enum.Font.SourceSansBold
         text.Parent = billboard
     end
@@ -96,7 +101,7 @@ function VisualsModule.Init(VisualsTab, Rayfield)
     end
 
     VisualsTab:CreateToggle({
-        Name = "ESP Nome dos jogadores",
+        Name = "ESP",
         CurrentValue = false,
         Flag = "ToggleNameESP",
         Callback = function(v)
@@ -104,14 +109,14 @@ function VisualsModule.Init(VisualsTab, Rayfield)
             if v then
                 for _, plr in pairs(game.Players:GetPlayers()) do
                     if plr ~= game.Players.LocalPlayer and plr.Character then
-                        AddNameESP(plr.Character, plr.Name)
+                        AddNameESP(plr.Character, plr)
                     end
                 end
                 game.Players.PlayerAdded:Connect(function(plr)
                     plr.CharacterAdded:Connect(function(char)
                         if NameESPEnabled then
                             task.wait(1)
-                            AddNameESP(char, plr.Name)
+                            AddNameESP(char, plr)
                         end
                     end)
                 end)
@@ -144,109 +149,6 @@ function VisualsModule.Init(VisualsTab, Rayfield)
             })
         end
     end)
-
-    -- =========================
-    -- ESP IDADE DA CONTA
-    -- =========================
-
-    local AccountAgeESPEnabled = false
-    local cache = {}
-
-    -- FUNÇÃO CACHE
-    local function getAccountAgeDays(plr)
-        if cache[plr.UserId] then
-            return cache[plr.UserId]
-        end
-
-        local days = plr.AccountAge
-        if days then
-            cache[plr.UserId] = days
-            return days
-        end
-        return nil
-    end
-
-    -- CRIAR ESP
-    local function AddAccountAgeESP(character, plr)
-        if not AccountAgeESPEnabled then return end
-        if character:FindFirstChild("AccountAgeESP") then return end
-
-        local head = character:FindFirstChild("Head")
-        if not head then return end
-
-        local days = getAccountAgeDays(plr)
-        if not days then return end
-
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "AccountAgeESP"
-        billboard.Size = UDim2.new(0, 120, 0, 40)
-        billboard.StudsOffset = Vector3.new(0, 2, 0)
-        billboard.AlwaysOnTop = true
-        billboard.MaxDistance = 100
-        billboard.Parent = head
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Text = days .. " dias"
-        label.TextScaled = true
-        label.Font = Enum.Font.SourceSansBold
-        label.TextColor3 = Color3.fromRGB(255,255,255)
-        label.Parent = billboard
-    end
-
-    -- REMOVER
-    local function RemoveAccountAgeESP()
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr.Character then
-                local esp = plr.Character:FindFirstChild("AccountAgeESP")
-                if esp then esp:Destroy() end
-            end
-        end
-    end
-
-    -- TOGGLE
-    VisualsTab:CreateToggle({
-        Name = "Idade da conta (dias)",
-        CurrentValue = false,
-        Flag = "AccountAgeESP",
-        Callback = function(v)
-            AccountAgeESPEnabled = v
-
-            if v then
-                -- Aplica nos jogadores atuais
-                for _, plr in pairs(Players:GetPlayers()) do
-                    if plr ~= Players.LocalPlayer and plr.Character then
-                        AddAccountAgeESP(plr.Character, plr)
-                    end
-                end
-
-                -- Conecta para novos jogadores
-                Players.PlayerAdded:Connect(function(plr)
-                    plr.CharacterAdded:Connect(function(char)
-                        if AccountAgeESPEnabled then
-                            task.wait(1)
-                            AddAccountAgeESP(char, plr)
-                        end
-                    end)
-                end)
-
-                -- Conecta para respawn de jogadores atuais
-                for _, plr in pairs(Players:GetPlayers()) do
-                    if plr ~= Players.LocalPlayer then
-                        plr.CharacterAdded:Connect(function(char)
-                            if AccountAgeESPEnabled then
-                                task.wait(1)
-                                AddAccountAgeESP(char, plr)
-                            end
-                        end)
-                    end
-                end
-            else
-                RemoveAccountAgeESP()
-            end
-        end,
-    })
 end
 
 return VisualsModule
