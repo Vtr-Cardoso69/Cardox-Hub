@@ -15,11 +15,25 @@ local function LoadModule(path)
         return game:HttpGet(BaseURL .. path)
     end)
 
-    if success and content then
-        local func = loadstring(content)
-        if func then
-            return func()
+    if not success then
+        warn("Erro ao baixar módulo: " .. path)
+        return nil
+    end
+
+    if content then
+        local func, err = loadstring(content)
+        if not func then
+            warn("Erro de sintaxe no módulo " .. path .. ": " .. err)
+            return nil
         end
+
+        local ok, result = pcall(func)
+        if not ok then
+            warn("Erro ao executar módulo " .. path .. ": " .. result)
+            return nil
+        end
+
+        return result
     end
 end
 

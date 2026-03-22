@@ -1,6 +1,7 @@
 local VisualsModule = {}
 
 function VisualsModule.Init(VisualsTab, Rayfield)
+    local Players = game:GetService("Players")
     local ESPEnabled = false
     local NameESPEnabled = false
     local JoinLogEnabled = false
@@ -143,95 +144,97 @@ function VisualsModule.Init(VisualsTab, Rayfield)
             })
         end
     end)
-end
 
     -- =========================
--- ESP IDADE DA CONTA
--- =========================
+    -- ESP IDADE DA CONTA
+    -- =========================
 
-local AccountAgeESPEnabled = false
-local cache = {}
+    local AccountAgeESPEnabled = false
+    local cache = {}
 
--- FUNÇÃO CACHE
-local function getAccountAgeDays(userId)
-    if cache[userId] then
-        return cache[userId]
-    end
+    -- FUNÇÃO CACHE
+    local function getAccountAgeDays(userId)
+        if cache[userId] then
+            return cache[userId]
+        end
 
-    local success, creationTime = pcall(function()
-        return Players:GetUserCreationDateAsync(userId)
-    end)
+        local success, creationTime = pcall(function()
+            return Players:GetUserCreationDateAsync(userId)
+        end)
 
-    if success then
-        local days = math.floor((os.time() - creationTime) / 86400)
-        cache[userId] = days
-        return days
-    end
-end
-
--- CRIAR ESP
-local function AddAccountAgeESP(character, plr)
-    if not AccountAgeESPEnabled then return end
-    if character:FindFirstChild("AccountAgeESP") then return end
-
-    local head = character:FindFirstChild("Head")
-    if not head then return end
-
-    local days = getAccountAgeDays(plr.UserId)
-    if not days then return end
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "AccountAgeESP"
-    billboard.Size = UDim2.new(0, 120, 0, 40)
-    billboard.StudsOffset = Vector3.new(0, 2, 0)
-    billboard.AlwaysOnTop = true
-    billboard.MaxDistance = 100
-    billboard.Parent = head
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = days .. " dias"
-    label.TextScaled = true
-    label.Font = Enum.Font.SourceSansBold
-    label.TextColor3 = Color3.fromRGB(255,255,255)
-    label.Parent = billboard
-end
-
--- REMOVER
-local function RemoveAccountAgeESP()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr.Character then
-            local esp = plr.Character:FindFirstChild("AccountAgeESP")
-            if esp then esp:Destroy() end
+        if success then
+            local days = math.floor((os.time() - creationTime) / 86400)
+            cache[userId] = days
+            return days
         end
     end
-end
 
--- TOGGLE
-VisualsTab:CreateToggle({
-    Name = "Idade da conta (dias)",
-    CurrentValue = false,
-    Flag = "AccountAgeESP",
-    Callback = function(v)
-        AccountAgeESPEnabled = v
+    -- CRIAR ESP
+    local function AddAccountAgeESP(character, plr)
+        if not AccountAgeESPEnabled then return end
+        if character:FindFirstChild("AccountAgeESP") then return end
 
-        if v then
-            -- aplica nos que já estão
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= Players.LocalPlayer and plr.Character then
-                    AddAccountAgeESP(plr.Character, plr)
-                end
+        local head = character:FindFirstChild("Head")
+        if not head then return end
 
-                plr.CharacterAdded:Connect(function(char)
-                    if AccountAgeESPEnabled then
-                        task.wait(1)
-                        AddAccountAgeESP(char, plr)
-                    end
-                end)
+        local days = getAccountAgeDays(plr.UserId)
+        if not days then return end
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "AccountAgeESP"
+        billboard.Size = UDim2.new(0, 120, 0, 40)
+        billboard.StudsOffset = Vector3.new(0, 2, 0)
+        billboard.AlwaysOnTop = true
+        billboard.MaxDistance = 100
+        billboard.Parent = head
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = days .. " dias"
+        label.TextScaled = true
+        label.Font = Enum.Font.SourceSansBold
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.Parent = billboard
+    end
+
+    -- REMOVER
+    local function RemoveAccountAgeESP()
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr.Character then
+                local esp = plr.Character:FindFirstChild("AccountAgeESP")
+                if esp then esp:Destroy() end
             end
-        else
-            RemoveAccountAgeESP()
         end
-    end,
-})
+    end
+
+    -- TOGGLE
+    VisualsTab:CreateToggle({
+        Name = "Idade da conta (dias)",
+        CurrentValue = false,
+        Flag = "AccountAgeESP",
+        Callback = function(v)
+            AccountAgeESPEnabled = v
+
+            if v then
+                -- aplica nos que já estão
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= Players.LocalPlayer and plr.Character then
+                        AddAccountAgeESP(plr.Character, plr)
+                    end
+
+                    plr.CharacterAdded:Connect(function(char)
+                        if AccountAgeESPEnabled then
+                            task.wait(1)
+                            AddAccountAgeESP(char, plr)
+                        end
+                    end)
+                end
+            else
+                RemoveAccountAgeESP()
+            end
+        end,
+    })
+end
+
+return VisualsModule
