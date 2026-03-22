@@ -8,6 +8,8 @@
     O código está aberto e comentado para estudo.
 ]]
 
+local BaseURL = "https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/main/Main/"
+
 local function LoadModule(path)
     local success, content = pcall(function()
         return game:HttpGet(BaseURL .. path)
