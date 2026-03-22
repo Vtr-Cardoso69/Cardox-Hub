@@ -1,4 +1,12 @@
-local BaseURL = "https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/main/Main/"
+--[[
+    LINK    loadstring(game:HttpGet("https://raw.githubusercontent.com/Vtr-Cardoso69/Cardox-Hub/main/Main/main.lua"))()
+
+    SCRIPT DE TESTE - CARDOX HUB
+    Compatível com: Delta, Fluxus, Hydrogen, Arceus X, etc.
+    
+    Este script usa a biblioteca 'Rayfield Interface Suite' para criar um menu bonito e organizado.
+    O código está aberto e comentado para estudo.
+]]
 
 local function LoadModule(path)
     local success, content = pcall(function()
@@ -12,6 +20,7 @@ local function LoadModule(path)
         end
     end
 end
+
 -- Inicializa Rayfield (uma única vez)
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()  
 
