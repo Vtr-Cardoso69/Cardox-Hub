@@ -153,20 +153,17 @@ function VisualsModule.Init(VisualsTab, Rayfield)
     local cache = {}
 
     -- FUNÇÃO CACHE
-    local function getAccountAgeDays(userId)
-        if cache[userId] then
-            return cache[userId]
+    local function getAccountAgeDays(plr)
+        if cache[plr.UserId] then
+            return cache[plr.UserId]
         end
 
-        local success, creationTime = pcall(function()
-            return Players:GetUserCreationDateAsync(userId)
-        end)
-
-        if success then
-            local days = math.floor((os.time() - creationTime) / 86400)
-            cache[userId] = days
+        local days = plr.AccountAge
+        if days then
+            cache[plr.UserId] = days
             return days
         end
+        return nil
     end
 
     -- CRIAR ESP
@@ -177,7 +174,7 @@ function VisualsModule.Init(VisualsTab, Rayfield)
         local head = character:FindFirstChild("Head")
         if not head then return end
 
-        local days = getAccountAgeDays(plr.UserId)
+        local days = getAccountAgeDays(plr)
         if not days then return end
 
         local billboard = Instance.new("BillboardGui")
@@ -217,18 +214,33 @@ function VisualsModule.Init(VisualsTab, Rayfield)
             AccountAgeESPEnabled = v
 
             if v then
-                -- aplica nos que já estão
+                -- Aplica nos jogadores atuais
                 for _, plr in pairs(Players:GetPlayers()) do
                     if plr ~= Players.LocalPlayer and plr.Character then
                         AddAccountAgeESP(plr.Character, plr)
                     end
+                end
 
+                -- Conecta para novos jogadores
+                Players.PlayerAdded:Connect(function(plr)
                     plr.CharacterAdded:Connect(function(char)
                         if AccountAgeESPEnabled then
                             task.wait(1)
                             AddAccountAgeESP(char, plr)
                         end
                     end)
+                end)
+
+                -- Conecta para respawn de jogadores atuais
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= Players.LocalPlayer then
+                        plr.CharacterAdded:Connect(function(char)
+                            if AccountAgeESPEnabled then
+                                task.wait(1)
+                                AddAccountAgeESP(char, plr)
+                            end
+                        end)
+                    end
                 end
             else
                 RemoveAccountAgeESP()
